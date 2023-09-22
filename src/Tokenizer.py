@@ -13,6 +13,10 @@ spec = {
     ## COMMENTS:
     r'^\/\/.*': None,
     r'^\/\([\s\S]*?\)\/': None,
+
+    ## Operators:
+    '+': "OPERATOR",
+    '-': "OPERATOR", 
 }
 
 class Token:
