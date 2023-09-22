@@ -46,9 +46,12 @@ class Parser:
                 return self.numericalLiteral()
             case "STRING":
                 return self.stringLiteral()
-
+            case None:
+                self._look_ahead_token = self._tokenizer.getNextToken()
+                return self.literal()
+            
         raise SyntaxError(
-            f"Literal: Unexpected literal type."
+            f"Unexpected literal {self._look_ahead_token.type}"
         )
 
     def numericalLiteral(self):
@@ -65,6 +68,7 @@ class Parser:
             "type": "StringLiteral",
             "value": token.value[1:len(token.value)-1]
         }
+    
 
     def _eat(self, token_type): 
         token = self._look_ahead_token
