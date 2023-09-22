@@ -6,7 +6,22 @@ class Expression:
         self.operator = op
         self.right = right
         self.type = _type
+        self.depth = 1
+        self.calculateDepth()
 
+    def calculateDepth(self):
+        if isinstance(self.left, Expression):
+            depth_left = self.left.calculateDepth()
+        else:
+            depth_left = 0
+        
+        if isinstance(self.right, Expression):
+            depth_right = self.right.calculateDepth()
+        else:
+            depth_right = 0
+
+        self.depth += max(depth_left, depth_right)
+        return self.depth
 
 class Parser:
 
