@@ -1,5 +1,13 @@
 from .Tokenizer import Tokenizer
 
+class Expression:
+    def __init__(self, left, op, right, _type=None):
+        self.left = left
+        self.operator = op
+        self.right = right
+        self.type = _type
+
+
 class Parser:
 
     def __init__(self):
@@ -54,6 +62,44 @@ class Parser:
             f"Unexpected literal {self._look_ahead_token.type}"
         )
 
+####### EXPRESSIONS ###########################
+#################################################
+
+    def buildAST(self, exp):
+        ast = {
+            "type": "ExpressionStatement",
+            "expression": {
+                "type": exp.type,
+                "operator": exp.operator,
+                "left": {
+                    "type": exp.left.type,
+                    "value": exp.left.value,
+                },
+                "right": {
+                    "type": exp.right.type,
+                    "value": exp.right.value,
+                }
+            }
+        }
+
+    
+    def expressionStatement(self):
+        lnumber_token = self._eat('NUMBER')
+        operator_token = self._eat('OPERATOR')
+        rnumber_token = self._eat('NUMBER')
+        binary_exp = Expression(lnumber_token, operator_token, rnumber_token, "BinaryExpression")
+
+    
+    def operatorLiteral(self):
+        token = self._eat('OPERATOR')
+        return {
+            "type": "BinaryOperator",
+            "value": token.value
+        }
+
+########################################################
+
+
     def numericalLiteral(self):
         token = self._eat('NUMBER')
 
@@ -68,6 +114,7 @@ class Parser:
             "type": "StringLiteral",
             "value": token.value[1:len(token.value)-1]
         }
+    
     
 
     def _eat(self, token_type): 
@@ -87,3 +134,35 @@ class Parser:
 
         return token
 
+
+
+'''
+AST
+2 + 3 - 2
+
+"type": "Program",
+"body": {
+    "type": "ExpressionStatement",
+    "expression": {
+        "type": "BinaryExpression",
+        "operator": "+",
+        "left": {
+            "type": "NumericalLiteral",
+            "value": 2,
+        },
+        "right": {
+            "type": "BinaryOperator",
+            "operator": "-",
+            "left": {
+                "type": "NumericalLiteral",
+                "value": "3",
+            },
+            "right": {
+                "type": "NumericalLiteral",
+                "value": 2,
+            },
+        },
+    },
+}
+
+'''
