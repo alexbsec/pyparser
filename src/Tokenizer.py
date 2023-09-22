@@ -1,4 +1,10 @@
-        
+import re  
+
+spec = {
+    r'^\d+': "NUMBER",
+    r'^[\'"].*?[\'"]' : "STRING"
+}
+
 class Token:
     def __init__(self, _type=None, _value=None):
         self.type = _type
@@ -14,34 +20,33 @@ class Tokenizer:
 
     def hasMoreTokens(self):
         return self._cursor < len(self._string)
+    
+
+    def _match(self, regex, string):
+        matched = re.match(regex, string)
+        if matched:
+            val = matched.group()
+            self._cursor += len(val)
+            return val
+
+        return None
+
+
+    def assignToken(self, string):
+        for regex, t_type in spec.items():
+            t_value = self._match(regex, string)
+            if t_value is not None:
+                return Token(t_type, t_value)
+            
+        raise SyntaxError(
+            f"Unexpected token: {string[0]}"
+        )
+
 
     def getNextToken(self):
         if not self.hasMoreTokens():
             return Token()
 
-        # numbers
         string = self._string[self._cursor:]
-
-        if string[0].isdigit():
-            number = ''
-            while self.hasMoreTokens() and string[self._cursor].isdigit():
-                number += string[self._cursor]
-                self._cursor += 1
-            return Token("NUMBER", number)
-
-        # strings
-
-        if string[0] == '"' or string[0] == "'":
-            s = ''
-            while not self.isEOF():
-                s += string[self._cursor]
-                self._cursor += 1
-            
-            if self.isEOF() and s[self._cursor-1] != string[0]:
-                return Token()
-
-
-            return Token("STRING", s)
-
-        
-        return Token()
+    
+        return self.assignToken(string)
