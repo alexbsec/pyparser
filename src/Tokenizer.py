@@ -37,6 +37,10 @@ class Tokenizer:
                 s += string[self._cursor]
                 self._cursor += 1
             
+            if self.isEOF() and s[self._cursor-1] != string[0]:
+                return Token()
+
+
             return Token("STRING", s)
 
         
