@@ -1,27 +1,5 @@
 from .Tokenizer import Tokenizer
 
-class Expression:
-    def __init__(self, left, op, right, _type=None):
-        self.left = left
-        self.operator = op
-        self.right = right
-        self.type = _type
-        self.depth = 0 
-        self.calculateDepth()
-
-    def calculateDepth(self):
-        depth_left = 0
-        depth_right = 0
-
-        if isinstance(self.left, Expression):
-            depth_left = self.left.calculateDepth()
-        if isinstance(self.right, Expression):
-            depth_right = self.right.calculateDepth()
-
-        self.depth = max(depth_left, depth_right) + 1
-        return self.depth
-
-
 class Parser:
 
     def __init__(self):
