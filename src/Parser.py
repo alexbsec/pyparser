@@ -6,28 +6,28 @@ class Expression:
         self.operator = op
         self.right = right
         self.type = _type
-        self.depth = 1
+        self.depth = 0 
         self.calculateDepth()
 
     def calculateDepth(self):
+        depth_left = 0
+        depth_right = 0
+
         if isinstance(self.left, Expression):
             depth_left = self.left.calculateDepth()
-        else:
-            depth_left = 0
-        
         if isinstance(self.right, Expression):
             depth_right = self.right.calculateDepth()
-        else:
-            depth_right = 0
 
-        self.depth += max(depth_left, depth_right)
+        self.depth = max(depth_left, depth_right) + 1
         return self.depth
+
 
 class Parser:
 
     def __init__(self):
         self._string = ''
         self._tokenizer = Tokenizer()
+        self._tokens = []
 
     def parse(self, string):
         self._tokenizer.initialize(string)
@@ -44,10 +44,17 @@ class Parser:
     '''
 
     def program(self):
-        return {
-            "type": 'Program',
-            "body": self.literal(),
-        }
+        body = self.literal()
+        if body is not None:
+            return {
+                "type": 'Program',
+                "body": body,
+            }
+        else:
+            return {
+                "type": 'Program',
+                "body": "Empty",
+            }
 
     
     '''
@@ -66,12 +73,16 @@ class Parser:
     def literal(self):
         match self._look_ahead_token.type:
             case "NUMBER":
-                return self.numericalLiteral()
+                explit = self.expressionLiteral()
+                return explit
             case "STRING":
                 return self.stringLiteral()
             case None:
-                self._look_ahead_token = self._tokenizer.getNextToken()
-                return self.literal()
+                if not self._tokenizer.isEOF():
+                    self._look_ahead_token = self._tokenizer.getNextToken()
+                    return self.literal()
+                
+                return None
             
         raise SyntaxError(
             f"Unexpected literal {self._look_ahead_token.type}"
@@ -80,48 +91,84 @@ class Parser:
 ####### EXPRESSIONS ###########################
 #################################################
 
+
     def buildAST(self, exp):
         ast = {
-            "type": "ExpressionStatement",
-            "expression": {
-                "type": exp.type,
-                "operator": exp.operator,
-                "left": {
-                    "type": exp.left.type,
-                    "value": exp.left.value,
-                },
-                "right": {
-                    "type": exp.right.type,
-                    "value": exp.right.value,
-                }
+                "type": "ExpressionStatement",
+                "expression": exp
             }
-        }
 
-    
-    def expressionStatement(self):
-        lnumber_token = self._eat('NUMBER')
-        operator_token = self._eat('OPERATOR')
-        rnumber_token = self._eat('NUMBER')
-        binary_exp = Expression(lnumber_token, operator_token, rnumber_token, "BinaryExpression")
+        return ast
 
-    
-    def operatorLiteral(self):
-        token = self._eat('OPERATOR')
+    def build_expression(self, tokens):
+        if len(tokens) == 0 or len(tokens) % 2 != 1:
+            return None  # No expression to build
+        
+        # Find the rightmost operator with the lowest precedence
+        lowest_precedence = float('inf')
+        lowest_precedence_index = -1
+        current_precedence = 0
+
+        for i in range(len(tokens) - 1, -1, -1):
+            token = tokens[i]
+            if isinstance(token, str) and token in "+-":
+                if current_precedence <= lowest_precedence:
+                    lowest_precedence = current_precedence
+                    lowest_precedence_index = i
+            elif token == '+':
+                current_precedence += 1
+            elif token == '-':
+                current_precedence += 1
+
+        if lowest_precedence_index == -1:
+            # No operators found, return the single value as an expression
+            return {"type": "NumericalLiteral", "value": tokens[0]}
+
+        left_tokens = tokens[:lowest_precedence_index]
+        right_tokens = tokens[lowest_precedence_index + 1:]
+        operator = tokens[lowest_precedence_index]
+
+        left_expression = self.build_expression(left_tokens)
+        right_expression = self.build_expression(right_tokens)
+
         return {
-            "type": "BinaryOperator",
-            "value": token.value
+            "type": "BinaryExpression",
+            "operator": operator,
+            "left": left_expression,
+            "right": right_expression,
         }
 
-########################################################
 
 
-    def numericalLiteral(self):
-        token = self._eat('NUMBER')
+    def expressionLiteral(self):
+        tokens = []  # Initialize an empty list to collect tokens
 
-        return {
-            "type": "NumericalLiteral",
-            "value": int(token.value)
-        }
+        # Loop to collect all NUMBER and OPERATOR tokens
+        while self._look_ahead_token.type in ['NUMBER', 'OPERATOR']:
+            print(self._look_ahead_token.value)
+            token = self._eat(self._look_ahead_token.type)
+            tokens.append(token)
+
+        # Check if there are tokens to build an expression
+        if not tokens:
+            raise SyntaxError("Expected NUMBER or OPERATOR")
+
+        # Convert tokens to a format suitable for building the AST
+        expression_tokens = []
+        for token in tokens:
+            if token.type == 'NUMBER':
+                expression_tokens.append(token.value)
+            elif token.type == 'OPERATOR':
+                expression_tokens.append(token.value)
+
+        # Build the expression
+        exp = self.build_expression(expression_tokens)
+
+        if exp:
+            ast = self.buildAST(exp)
+            return ast
+        else:
+            raise SyntaxError(f"Expression could not be parsed correctly. What was interpreted: {' '.join(a for a in expression_tokens)}")
 
     def stringLiteral(self):
         token = self._eat('STRING')

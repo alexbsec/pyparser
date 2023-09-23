@@ -15,8 +15,7 @@ spec = {
     r'^\/\([\s\S]*?\)\/': None,
 
     ## Operators:
-    '+': "OPERATOR",
-    '-': "OPERATOR", 
+    r'[+-]': "OPERATOR",
 }
 
 class Token:

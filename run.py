@@ -2,13 +2,10 @@ from src import Parser
 
 
 parser = Parser.Parser()
-program = '''
-    /(
-    bugbyte program
+program = '''/(
+    HI MOM
     )/
-    'oi'
-
-    // number
+    1+2-3
 '''
 ast = parser.parse(program)
 print(ast)
